@@ -1,0 +1,9 @@
+# Insider Transactions data for AAPL
+# Data retrieved on: 2026-06-04 09:30:00
+
+Shares,Value,Text,Insider,Position,Transaction,Start Date,Ownership
+15000,3218400.0,Sale at price 214.56 per share.,COOK TIMOTHY D,Chief Executive Officer,Sale,2026-05-28,D
+4200,901320.0,Sale at price 214.60 per share.,PAREKH KEVAN,Chief Financial Officer,Sale,2026-05-21,D
+12500,0.0,Conversion of restricted stock units.,WILLIAMS JEFFREY E,Chief Operating Officer,Stock Award(Grant),2026-05-15,D
+2800,597240.0,Sale at price 213.30 per share.,ADAMS KATHERINE L,SVP General Counsel,Sale,2026-05-12,D
+6000,0.0,Conversion of restricted stock units.,O'BRIEN DEIRDRE,SVP People and Retail,Stock Award(Grant),2026-05-08,D
