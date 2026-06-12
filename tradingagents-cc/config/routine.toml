@@ -1,0 +1,37 @@
+# tradingagents-cc routine configuration.
+# Read by the unattended daily driver (`python -m tradingagents_cc.routine`)
+# via tradingagents_cc.default_config.load_routine_config(). Every key is
+# optional; omitted keys fall back to DEFAULT_CONFIG. Unknown keys are
+# rejected at load time so typos fail loudly instead of being ignored.
+
+# Tickers analysed sequentially each run, one full pipeline pass per ticker
+# (decisions.jsonl row + report tree each). Upper-cased on load so checkpoint
+# thread ids stay stable regardless of casing here.
+tickers = ["SPY"]
+
+# Research depth: sets BOTH max_debate_rounds and max_risk_discuss_rounds
+# (parity with the parent CLI presets: 1 = Shallow, 3 = Medium, 5 = Deep).
+# Each unit adds 2 investment-debate turns and 3 risk-debate turns, so keep
+# this at 1 for daily runs to stay well inside the subscription credit pool.
+depth = 1
+
+# Analyst reports gathered before the debates, in this order. Valid entries:
+# "market", "social", "news", "fundamentals". Duplicates are rejected.
+analysts = ["market", "social", "news", "fundamentals"]
+
+# Model overrides. Leave commented to use the DEFAULT_CONFIG tiers
+# (quick: claude-sonnet-4-6, deep: claude-opus-4-8).
+# quick_model runs the 4 analysts, bull/bear researchers, trader, the 3 risk
+# debaters, and the reflector; deep_model runs only the Research Manager and
+# the Portfolio Manager.
+#quick_model = "claude-sonnet-4-6"
+#deep_model = "claude-opus-4-8"
+
+# Language for the rendered analyst reports and the final decision.
+# Internal agent debate always stays in English for reasoning quality.
+output_language = "English"
+
+# When true, pipeline state is checkpointed after every stage so a crashed or
+# killed run resumes from the last completed node on the next invocation
+# (Task Scheduler retry or the next scheduled day).
+checkpoint_enabled = true

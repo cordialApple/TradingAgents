@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tradingagents-cc"
+version = "0.1.0"
+description = "TradingAgents on the Claude Agent SDK: subscription-auth multi-agent trading workflow with a schedulable daily routine"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "tradingagents",
+    "claude-agent-sdk>=0.1.0",
+    "pydantic>=2",
+    "yfinance>=0.2.63",
+    "tomli>=2; python_version < '3.11'",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+]
+
+[tool.uv.sources]
+tradingagents = { workspace = true }
+
+[project.scripts]
+tradingagents-cc = "tradingagents_cc.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["tradingagents_cc*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+asyncio_mode = "auto"
+markers = [
+    "live: requires TRADINGAGENTS_CC_LIVE=1 and a real CLAUDE_CODE_OAUTH_TOKEN; consumes subscription credit",
+]
