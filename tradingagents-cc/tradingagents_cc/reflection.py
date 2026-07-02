@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any
 import yfinance as yf
 
 from .memory import TradingMemoryLog
+from .nodes import SINGLE_SHOT_MAX_TURNS
 from .prompts import REFLECTOR_SYSTEM, build_reflector_user_prompt
 
 if TYPE_CHECKING:  # avoid a runtime import of the client seam
@@ -84,7 +85,8 @@ async def resolve_pending_entries(
 
     Fetches returns for each same-ticker pending entry, generates a reflection
     per resolvable entry with ONE quick-tier (``cfg["quick_think_llm"]``),
-    no-tool, ``max_turns=1`` reflector call, then writes all updates in a
+    no-tool reflector call (``SINGLE_SHOT_MAX_TURNS`` headroom, see
+    ``nodes.py``), then writes all updates in a
     single atomic batch via ``memory_log.batch_update_with_outcomes``. Any
     failure — unavailable price data, an LLM error, an empty reflection — is
     logged and non-fatal: the affected entry stays pending and is retried the
@@ -119,7 +121,7 @@ async def resolve_pending_entries(
                 ),
                 system_prompt=REFLECTOR_SYSTEM,
                 model=cfg["quick_think_llm"],
-                max_turns=1,
+                max_turns=SINGLE_SHOT_MAX_TURNS,
             )
         except Exception as e:
             logger.warning(
