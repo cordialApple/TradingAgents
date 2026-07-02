@@ -115,7 +115,7 @@ $settingsParams = @{
     DontStopIfGoingOnBatteries = $true
     StartWhenAvailable         = $true
     MultipleInstances          = 'IgnoreNew'
-    ExecutionTimeLimit         = (New-TimeSpan -Hours 2)
+    ExecutionTimeLimit         = (New-TimeSpan -Hours 3)
     RestartCount               = 2
     RestartInterval            = (New-TimeSpan -Minutes 30)
 }
