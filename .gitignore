@@ -218,3 +218,6 @@ __marimo__/
 
 # Cache
 **/data_cache/
+
+# tradingagents-cc run outputs (TRADINGAGENTS_RESULTS_DIR)
+results/
