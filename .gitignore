@@ -221,3 +221,6 @@ __marimo__/
 
 # tradingagents-cc run outputs (TRADINGAGENTS_RESULTS_DIR)
 results/
+# Enterprise env file (secrets) and generated run reports
+.env.enterprise
+reports/
