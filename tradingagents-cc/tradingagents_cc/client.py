@@ -340,17 +340,36 @@ class SdkAgentClient:
 
         # Streaming-mode prompt: required by the SDK because options carry a
         # can_use_tool callback (a str prompt raises ValueError pre-spawn).
-        async for message in sdk.query(prompt=_stream_prompt(prompt), options=options):
-            if isinstance(message, sdk.AssistantMessage):
-                llm_calls += 1
-                for block in message.content:
-                    if isinstance(block, sdk.ToolUseBlock):
-                        tool_calls += 1
-                        tool_call_log.append(
-                            _format_tool_call_line(block.name, block.input)
-                        )
-            elif isinstance(message, sdk.ResultMessage):
-                result_message = message
+        #
+        # The SDK's receive_messages() raises a plain Exception (not a typed
+        # SDK error) when the CLI exits non-zero after emitting an error result.
+        # The message text is "Claude Code returned an error result: <subtype>"
+        # (e.g. "...result: success" when the CLI crashes with a contradictory
+        # is_error=True/subtype=success payload — seen with the bundled CLI
+        # when MCP data tools return empty responses).  This exception bypasses
+        # the typed retryable tuple in run(), so we catch it here and re-raise
+        # as CLIConnectionError so the retry loop in run() picks it up.
+        try:
+            async for message in sdk.query(prompt=_stream_prompt(prompt), options=options):
+                if isinstance(message, sdk.AssistantMessage):
+                    llm_calls += 1
+                    for block in message.content:
+                        if isinstance(block, sdk.ToolUseBlock):
+                            tool_calls += 1
+                            tool_call_log.append(
+                                _format_tool_call_line(block.name, block.input)
+                            )
+                elif isinstance(message, sdk.ResultMessage):
+                    result_message = message
+        except (sdk.CLIConnectionError, sdk.ProcessError, sdk.CLIJSONDecodeError):
+            raise  # already retryable — let run() handle them
+        except Exception as exc:
+            text = str(exc)
+            if text.startswith("Claude Code returned an error result:"):
+                # Re-raise as CLIConnectionError so run()'s retry loop treats
+                # this as a transient transport failure.
+                raise sdk.CLIConnectionError(text) from exc
+            raise  # unexpected — propagate as-is
 
         if result_message is None:
             raise StageError(f"[{role}] query() ended without a ResultMessage")
