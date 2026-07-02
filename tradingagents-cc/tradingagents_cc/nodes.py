@@ -62,6 +62,16 @@ if TYPE_CHECKING:  # type-only: keeps runtime imports minimal
 
 logger = logging.getLogger(__name__)
 
+# Turn budget for the no-tool, single-response calls (debaters, risk debaters,
+# structured decision stages). Logically these need one turn, but the bundled
+# CLI's turn accounting can consume extra turns on a single response (the
+# structured-output flow, thinking blocks) — with max_turns=1 the CLI dies with
+# "Reached maximum number of turns (1)" (deterministic on the deep tier,
+# intermittent on quick; observed 2026-07-01). Small headroom, no cost risk:
+# these calls mount no tools, so the model cannot loop — it stops when the
+# response (or structured payload) is complete.
+SINGLE_SHOT_MAX_TURNS = 4
+
 __all__ = [
     "run_analyst",
     "run_bull",
@@ -189,7 +199,9 @@ async def _run_debater(
         debate.get("current_response", ""),
     )
 
-    result = await client.run(role, prompt, model=cfg["quick_think_llm"])
+    result = await client.run(
+        role, prompt, model=cfg["quick_think_llm"], max_turns=SINGLE_SHOT_MAX_TURNS
+    )
     argument = f"{label}: {result.text}"
 
     new_debate = {
@@ -304,6 +316,7 @@ async def _structured_or_freetext(
         system_prompt=system_prompt,
         model=model,
         output_schema=model_cls.model_json_schema(),
+        max_turns=SINGLE_SHOT_MAX_TURNS,
         **extra,
     )
     if result.structured is not None:
@@ -322,6 +335,7 @@ async def _structured_or_freetext(
         role, prompt,
         system_prompt=system_prompt,
         model=model,
+        max_turns=SINGLE_SHOT_MAX_TURNS,
         **extra,
     )
     return retry.text, True
@@ -470,7 +484,9 @@ async def run_risk_debator(
         risk.get(other_response_keys[1], ""),
     )
 
-    result = await client.run(role, prompt, model=cfg["quick_think_llm"])
+    result = await client.run(
+        role, prompt, model=cfg["quick_think_llm"], max_turns=SINGLE_SHOT_MAX_TURNS
+    )
     argument = f"{speaker} Analyst: {result.text}"
 
     new_risk = {

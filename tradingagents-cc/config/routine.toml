@@ -7,7 +7,8 @@
 # Tickers analysed sequentially each run, one full pipeline pass per ticker
 # (decisions.jsonl row + report tree each). Upper-cased on load so checkpoint
 # thread ids stay stable regardless of casing here.
-tickers = ["SPY"]
+# Edit this list to change which stocks are analyzed — no code changes needed.
+tickers = ["AAPL", "MSFT", "NVDA", "JPM", "JNJ", "XOM", "WMT", "COST"]
 
 # Research depth: sets BOTH max_debate_rounds and max_risk_discuss_rounds
 # (parity with the parent CLI presets: 1 = Shallow, 3 = Medium, 5 = Deep).

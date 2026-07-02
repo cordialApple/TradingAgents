@@ -28,7 +28,7 @@ weekday/trading-day guards: a free end-to-end plumbing check (full artifact
 tree, lock, logging) for validating the Task Scheduler wiring.
 
 Exit codes: 0 = all tickers ok, or a clean skip (weekend / market closed /
-another instance holds the lock); 1 = partial failure (at least one ticker
+trading-day check unavailable / another instance holds the lock); 1 = partial failure (at least one ticker
 failed); 2 = fatal (auth, malformed routine config, unexpected error).
 
 Windows note: never install a Selector event-loop policy here — the Agent
@@ -60,7 +60,7 @@ __all__ = ["main"]
 # <repo>/config/routine.toml — the package dir's parent (source checkout layout).
 DEFAULT_ROUTINE_TOML = Path(__file__).resolve().parent.parent / "config" / "routine.toml"
 
-# A routine run is hard-capped at 2h by the scheduled task; a lock older than
+# A routine run is hard-capped at 3h by the scheduled task; a lock older than
 # 6h cannot belong to a live legitimate run.
 LOCK_STALE_AGE_S = 6 * 60 * 60
 
@@ -185,7 +185,7 @@ def _lock_is_stale(lock_path: Path, st: os.stat_result | None = None) -> bool:
 
     Documented psutil-free rule: a lock younger than 6h is treated as live
     unless its PID is provably not running; at 6h or older it is stale
-    regardless of the PID — the scheduled task kills runs at 2h and PIDs
+    regardless of the PID — the scheduled task kills runs at 3h and PIDs
     recycle, so the age bound beats an unreliable PID match.
 
     ``st`` is an optional caller-captured stat snapshot of the lock file so
@@ -309,10 +309,9 @@ def _is_trading_day(trade_date: str) -> bool | None:
     """True/False = SPY traded on trade_date or not; None = check unavailable.
 
     One tiny yfinance history call against the same keyless source the data
-    tools use. ``None`` (network/API failure) fails OPEN with a warning in the
-    caller — a transient check outage must not silently skip a real trading
-    day, and downstream data failures already degrade to error-string reports
-    instead of aborting.
+    tools use. ``None`` (network/API failure) fails CLOSED in the caller —
+    if we cannot confirm the market is open we skip the run rather than risk
+    burning credit on a non-trading day or when data tools are down.
     """
     try:
         rows = yf.Ticker("SPY").history(period="5d")
@@ -411,7 +410,8 @@ def _run_locked(args: argparse.Namespace, results_dir: Path, now: datetime) -> i
             logger.info("Market closed on %s (no SPY row) — nothing to do.", trade_date)
             return 0
         if open_today is None:
-            logger.warning("Trading-day check unavailable; proceeding anyway.")
+            logger.warning("Trading-day check unavailable; skipping run to avoid wasting credit on a non-trading day.")
+            return 0
 
     try:
         routine = load_routine_config(args.config)
